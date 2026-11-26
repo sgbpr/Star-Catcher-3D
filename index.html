@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Star Catcher 3D — Celestial Observatory</title>
+  <!-- Tailwind CSS for sleek frosted-glass HUD & overlays -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+   <!-- CONNECT CSS HERE -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 3D WebGL Viewport -->
+  <div id="gameContainer"></div>
+
+  <!-- 3D-to-2D Projected Score Popups -->
+  <div id="popupLayer" class="fixed inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+  <!-- MODERN FROSTED-GLASS TOP HUD -->
+  <header id="hudBar" class="hidden fixed top-0 left-0 right-0 z-20 p-3 sm:p-5 pointer-events-none">
+    <div class="max-w-6xl mx-auto flex items-start justify-between gap-2">
+
+      <!-- TOP-LEFT: Hearts, Dash Cooldown & Active Power-Ups -->
+      <div class="flex flex-col gap-2 pointer-events-auto">
+        <div class="flex items-center gap-2">
+          <!-- Lives -->
+          <div id="hudLives" class="hud-glass rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2 flex items-center gap-1.5" aria-label="Lives"></div>
+
+          <!-- Starlight Dash Readiness Gauge -->
+          <div class="hud-glass rounded-2xl px-3 py-1.5 flex items-center gap-2">
+            <span class="text-sm sm:text-base leading-none">⚡</span>
+            <div class="w-14 sm:w-20">
+              <div class="flex justify-between text-[9px] font-extrabold uppercase tracking-wider text-sky-300 leading-none mb-1">
+                <span>Dash</span>
+                <span id="hudDashText">Ready</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div id="hudDashBar" class="h-full bg-gradient-to-r from-sky-400 to-cyan-300 rounded-full transition-all duration-75" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Power-Up Status Bars -->
+        <div id="hudPowerups" class="flex flex-wrap items-center gap-2 pointer-events-none"></div>
+      </div>
+
+      <!-- TOP-CENTER: Score, Best & Combo Meter -->
+      <div class="flex flex-col items-center gap-1.5 pointer-events-auto">
+        <div class="hud-glass rounded-2xl px-4 py-1.5 sm:px-6 sm:py-2 flex items-center gap-4 sm:gap-6">
+          <div class="text-center">
+            <div class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-amber-300/90 leading-none">Score</div>
+            <div id="hudScore" class="font-display text-xl sm:text-3xl font-bold text-white leading-tight">0</div>
+          </div>
+          <div class="h-7 w-[1px] bg-white/15"></div>
+          <div class="text-center">
+            <div class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400 leading-none">Best</div>
+            <div id="hudBest" class="font-display text-base sm:text-xl font-bold text-amber-200 leading-tight">0</div>
+          </div>
+        </div>
+
+        <!-- Smooth Draining Combo Bar -->
+        <div id="hudComboWrap" class="hidden hud-glass rounded-full px-3.5 py-1 items-center gap-2.5 border-amber-400/40">
+          <span id="hudCombo" class="font-display text-xs sm:text-sm font-bold text-amber-300 tracking-wide">x2 COMBO</span>
+          <div class="w-20 sm:w-28 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+            <div id="hudComboBar" class="h-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 rounded-full" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP-RIGHT: Sound & Pause Controls -->
+      <div class="flex items-center gap-2 pointer-events-auto">
+        <button id="btnMute" type="button" title="Toggle Sound & Music"
+          class="btn-action hud-glass w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-slate-100 hover:border-amber-300/50 cursor-pointer">
+          <svg id="iconSoundOn" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
+          </svg>
+          <svg id="iconSoundOff" class="w-5 h-5 hidden text-rose-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6" />
+          </svg>
+        </button>
+
+        <button id="btnPause" type="button" title="Pause Game (P / Esc)"
+          class="btn-action hud-glass w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-slate-100 hover:border-amber-300/50 cursor-pointer">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <rect x="6" y="4" width="4" height="16" rx="1.5" />
+            <rect x="14" y="4" width="4" height="16" rx="1.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE / TOUCH CONTROLS (VIRTUAL JOYSTICK + JUMP & DASH BUTTONS) -->
+  <div id="mobileControls" class="hidden md:hidden">
+    <div id="joystickZone" aria-label="Movement Joystick">
+      <div id="joystickKnob"></div>
+    </div>
+
+    <div class="fixed right-4 bottom-6 z-22 flex flex-col gap-3">
+      <button id="btnMobileDash" type="button"
+        class="btn-action w-16 h-16 rounded-full hud-glass border-2 border-sky-400/60 flex flex-col items-center justify-center text-sky-300 shadow-lg active:scale-95">
+        <span class="text-xl leading-none">⚡</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Dash</span>
+      </button>
+      <button id="btnMobileJump" type="button"
+        class="btn-action w-16 h-16 rounded-full hud-glass border-2 border-amber-400/60 flex flex-col items-center justify-center text-amber-300 shadow-lg active:scale-95">
+        <span class="text-xl leading-none">⬆️</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Jump</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- START SCREEN OVERLAY (LIVE 3D ORBITING PREVIEW BEHIND) -->
+  <section id="startOverlay" class="fixed inset-0 z-30 flex items-end sm:items-center justify-center p-4 sm:p-6 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent">
+    <div class="modal-glass animate-pop-in w-full max-w-lg rounded-[2rem] p-6 sm:p-8 text-center text-white">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-300 text-xs font-extrabold uppercase tracking-widest mb-2">
+        <span>✨</span> Celestial Observatory Edition
+      </div>
+
+      <h1 class="font-display text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-amber-200 via-yellow-300 to-sky-300 bg-clip-text text-transparent">
+        Star Catcher 3D
+      </h1>
+      <p class="mt-1.5 text-xs sm:text-sm font-semibold text-slate-300 max-w-md mx-auto">
+        Guide <span class="text-amber-300 font-bold">Astra</span> across the sunken starlight courtyard. Chain combos, dash through danger, and gather fallen starlight!
+      </p>
+
+      <!-- Best Score Pill -->
+      <div class="mt-3.5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-amber-200 text-xs sm:text-sm font-bold">
+        <span>👑 Best Score:</span>
+        <span id="menuBestScore" class="font-display text-base text-amber-300">0</span>
+      </div>
+
+      <!-- Item & Mechanic Legend -->
+      <div class="mt-4 grid grid-cols-2 gap-2 text-left">
+        <div class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-xl">⭐</span>
+          <div>
+            <div class="font-display font-bold text-xs sm:text-sm text-amber-200">Star &amp; Gold Coin</div>
+            <div class="text-[11px] font-semibold text-slate-300">+10 / +25 × Combo</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-xl">🌟</span>
+          <div>
+            <div class="font-display font-bold text-xs sm:text-sm text-fuchsia-300">Super Star</div>
+            <div class="text-[11px] font-semibold text-slate-300">+50 Pts &amp; +1 ❤️</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-xl">🧲🛡️</span>
+          <div>
+            <div class="font-display font-bold text-xs sm:text-sm text-sky-300">Magnet &amp; Shield</div>
+            <div class="text-[11px] font-semibold text-slate-300">Auto-Pull &amp; Block Hit</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-xl">☄️</span>
+          <div>
+            <div class="font-display font-bold text-xs sm:text-sm text-rose-400">Molten Meteor</div>
+            <div class="text-[11px] font-semibold text-slate-300">-1 Life &amp; Resets Combo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Guide Badges -->
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-bold text-slate-300">
+        <span class="px-2.5 py-1 rounded-lg bg-white/10 border border-white/10">WASD / Arrows: Move 360°</span>
+        <span class="px-2.5 py-1 rounded-lg bg-white/10 border border-white/10">Space: Jump</span>
+        <span class="px-2.5 py-1 rounded-lg bg-sky-400/15 border border-sky-400/30 text-sky-200">Shift / E: Starlight Dash ⚡</span>
+      </div>
+
+      <button id="btnPlay" type="button"
+        class="btn-action glow-gold mt-5 w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 text-slate-950 font-display text-xl sm:text-2xl font-bold tracking-wide cursor-pointer">
+        ENTER COURTYARD ⭐
+      </button>
+    </div>
+  </section>
+
+  <!-- PAUSE OVERLAY -->
+  <section id="pauseOverlay" class="hidden fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md">
+    <div class="modal-glass animate-pop-in w-full max-w-sm rounded-[2rem] p-7 text-center text-white">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-400/15 border border-amber-300/30 text-amber-300 text-2xl mb-3">
+        ⏸️
+      </div>
+      <h2 class="font-display text-3xl font-bold text-white">Observatory Paused</h2>
+      <p class="mt-1 text-xs sm:text-sm font-semibold text-slate-300">The falling stars await your return.</p>
+
+      <div class="mt-6 flex flex-col gap-3">
+        <button id="btnResume" type="button"
+          class="btn-action w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 font-display text-xl font-bold shadow-lg shadow-emerald-500/25 cursor-pointer">
+          RESUME
+        </button>
+        <button id="btnPauseRestart" type="button"
+          class="btn-action w-full py-3 px-6 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-slate-200 font-display text-lg font-bold cursor-pointer">
+          RESTART RUN
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME OVER OVERLAY -->
+  <section id="gameOverOverlay" class="hidden fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+    <div class="modal-glass animate-pop-in w-full max-w-md rounded-[2rem] p-6 sm:p-8 text-center text-white">
+      <div id="newBestBadge" class="hidden mb-2 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold uppercase tracking-wider shadow">
+        <span>👑</span> New Record!
+      </div>
+
+      <h2 class="font-display text-4xl font-bold text-white">Run Complete</h2>
+      <p class="mt-1 text-xs sm:text-sm font-semibold text-slate-300">Astra gathered starlight across the twilight sky!</p>
+
+      <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div class="p-3 rounded-2xl bg-white/5 border border-white/10">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Score</div>
+          <div id="finalScore" class="font-display text-2xl font-bold text-white mt-0.5">0</div>
+        </div>
+        <div class="p-3 rounded-2xl bg-amber-400/10 border border-amber-300/25">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">Best</div>
+          <div id="finalBestScore" class="font-display text-2xl font-bold text-amber-300 mt-0.5">0</div>
+        </div>
+        <div class="p-3 rounded-2xl bg-orange-400/10 border border-orange-300/25">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-orange-300">Max Combo</div>
+          <div id="finalMaxCombo" class="font-display text-2xl font-bold text-orange-300 mt-0.5">x1</div>
+        </div>
+        <div class="p-3 rounded-2xl bg-sky-400/10 border border-sky-300/25">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-sky-300">Caught</div>
+          <div id="finalCaughtCount" class="font-display text-2xl font-bold text-sky-300 mt-0.5">0</div>
+        </div>
+      </div>
+
+      <button id="btnRestart" type="button"
+        class="btn-action glow-gold mt-6 w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 text-slate-950 font-display text-xl sm:text-2xl font-bold tracking-wide cursor-pointer">
+        PLAY AGAIN 🔄
+      </button>
+    </div>
+  </section>
+    <!-- CONNECT JS HERE -->
+    <script src="Script.js"></script>
+</body>
+</html>

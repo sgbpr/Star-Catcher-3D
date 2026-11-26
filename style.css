@@ -1,0 +1,123 @@
+ * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #090d1f;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      touch-action: none;
+    }
+
+    .font-display {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+
+    #gameContainer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hud-glass {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 12px 30px -6px rgba(2, 6, 23, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .modal-glass {
+      background: rgba(15, 23, 42, 0.84);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(251, 191, 36, 0.28);
+      box-shadow: 0 28px 64px -12px rgba(2, 6, 23, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-action {
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease, box-shadow 0.14s ease;
+    }
+    .btn-action:hover {
+      transform: translateY(-2px) scale(1.02);
+      filter: brightness(1.06);
+    }
+    .btn-action:active {
+      transform: translateY(2px) scale(0.96);
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.9) translateY(16px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop-in {
+      animation: popIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.35); }
+      50% { box-shadow: 0 0 38px rgba(251, 191, 36, 0.65); }
+    }
+    .glow-gold {
+      animation: pulseGlow 2.6s ease-in-out infinite;
+    }
+
+    .floating-popup {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Fredoka', cursive, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-shadow: 0 3px 10px rgba(2, 6, 23, 0.95), 0 1px 0 rgba(0, 0, 0, 0.9);
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      will-change: transform, opacity;
+      white-space: nowrap;
+    }
+
+    /* Mobile Virtual Joystick & Action Pads */
+    #joystickZone {
+      position: fixed;
+      left: 18px;
+      bottom: 22px;
+      width: 124px;
+      height: 124px;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, 0.42);
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(8px);
+      z-index: 22;
+      touch-action: none;
+    }
+
+    #joystickKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 50px;
+      height: 50px;
+      margin-left: -25px;
+      margin-top: -25px;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 35% 35%, #fef08a, #f59e0b);
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+      pointer-events: none;
+      transition: transform 0.05s linear;
+    }
+    
